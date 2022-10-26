@@ -50,14 +50,17 @@ class BpfMap {
     // flag must be within BPF_OBJ_FLAG_MASK, ie. 0, BPF_F_RDONLY, BPF_F_WRONLY
     BpfMap<Key, Value>(const char* pathname, uint32_t flags) {
         mMapFd.reset(mapRetrieve(pathname, flags));
-        if (mMapFd < 0) abort();
-        if (isAtLeastKernelVersion(4, 14, 0)) {
-            if (bpfGetFdKeySize(mMapFd) != sizeof(Key)) abort();
-            if (bpfGetFdValueSize(mMapFd) != sizeof(Value)) abort();
-        }
     }
 
   public:
+    bool isOk() {
+        if (mMapFd < 0) return false;
+        if (isAtLeastKernelVersion(4, 14, 0)) {
+            if (bpfGetFdKeySize(mMapFd) != sizeof(Key)) return false;
+            if (bpfGetFdValueSize(mMapFd) != sizeof(Value)) return false;
+        }
+        return true;
+    }
     explicit BpfMap<Key, Value>(const char* pathname) : BpfMap<Key, Value>(pathname, 0) {}
 
     BpfMap<Key, Value>(bpf_map_type map_type, uint32_t max_entries, uint32_t map_flags = 0) {
